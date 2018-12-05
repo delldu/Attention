@@ -1,10 +1,58 @@
 ''' Define the sublayers in encoder/decoder layer '''
 import numpy as np
+import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from transformer.Modules import ScaledDotProductAttention
+import pdb
 
 __author__ = "Yu-Hsiang Huang"
+
+
+class ScaledDotProductAttention(nn.Module):
+    ''' Scaled Dot-Product Attention '''
+
+    def __init__(self, temperature, attn_dropout=0.1):
+        super().__init__()
+        self.temperature = temperature
+        self.dropout = nn.Dropout(attn_dropout)
+        self.softmax = nn.Softmax(dim=2)
+        # pdb.set_trace()
+        # (Pdb) a
+        # self = ScaledDotProductAttention(
+        #   (dropout): Dropout(p=0.1)
+        #   (softmax): Softmax()
+        # )
+        # temperature = 8.0
+        # attn_dropout = 0.1
+
+    def forward(self, q, k, v, mask=None):
+
+        attn = torch.bmm(q, k.transpose(1, 2))
+        attn = attn / self.temperature
+
+        if mask is not None:
+            attn = attn.masked_fill(mask, -np.inf)
+
+        attn = self.softmax(attn)
+        attn = self.dropout(attn)
+        output = torch.bmm(attn, v)
+
+        # pdb.set_trace()
+        # (Pdb) print(q.size())
+        # torch.Size([512, 29, 64])
+
+        # (Pdb) print(k.size())
+        # torch.Size([512, 29, 64])
+        # (Pdb) print(k.transpose(1, 2).size())
+        # torch.Size([512, 64, 29])
+
+        # (Pdb) print(v.size())
+        # torch.Size([512, 29, 64])
+
+        # (Pdb) print(mask.size())
+        # torch.Size([512, 29, 29])
+
+        return output, attn
 
 class MultiHeadAttention(nn.Module):
     ''' Multi-Head Attention module '''
@@ -30,6 +78,25 @@ class MultiHeadAttention(nn.Module):
         nn.init.xavier_normal_(self.fc.weight)
 
         self.dropout = nn.Dropout(dropout)
+        # pdb.set_trace()
+        # (Pdb) a
+        # self = MultiHeadAttention(
+        #   (w_qs): Linear(in_features=512, out_features=512, bias=True)
+        #   (w_ks): Linear(in_features=512, out_features=512, bias=True)
+        #   (w_vs): Linear(in_features=512, out_features=512, bias=True)
+        #   (attention): ScaledDotProductAttention(
+        #     (dropout): Dropout(p=0.1)
+        #     (softmax): Softmax()
+        #   )
+        #   (layer_norm): LayerNorm(torch.Size([512]), eps=1e-05, elementwise_affine=True)
+        #   (fc): Linear(in_features=512, out_features=512, bias=True)
+        #   (dropout): Dropout(p=0.1)
+        # )
+        # n_head = 8
+        # d_model = 512
+        # d_k = 64
+        # d_v = 64
+        # dropout = 0.1
 
 
     def forward(self, q, k, v, mask=None):
@@ -41,6 +108,10 @@ class MultiHeadAttention(nn.Module):
         sz_b, len_v, _ = v.size()
 
         residual = q
+
+        # pdb.set_trace()
+        # (Pdb) print(mask.size())
+        # torch.Size([64, 25, 25])
 
         q = self.w_qs(q).view(sz_b, len_q, n_head, d_k)
         k = self.w_ks(k).view(sz_b, len_k, n_head, d_k)
@@ -59,6 +130,13 @@ class MultiHeadAttention(nn.Module):
         output = self.dropout(self.fc(output))
         output = self.layer_norm(output + residual)
 
+        # pdb.set_trace()
+        # (Pdb) print(mask.size())
+        # torch.Size([512, 29, 29])
+
+        # (Pdb) print(q.size(), k.size(), v.size())
+        # torch.Size([512, 29, 64]) torch.Size([512, 29, 64]) torch.Size([512, 29, 64])
+
         return output, attn
 
 class PositionwiseFeedForward(nn.Module):
@@ -71,6 +149,18 @@ class PositionwiseFeedForward(nn.Module):
         self.layer_norm = nn.LayerNorm(d_in)
         self.dropout = nn.Dropout(dropout)
 
+        # pdb.set_trace()
+        # self = PositionwiseFeedForward(
+        #   (w_1): Conv1d(512, 2048, kernel_size=(1,), stride=(1,))
+        #   (w_2): Conv1d(2048, 512, kernel_size=(1,), stride=(1,))
+        #   (layer_norm): LayerNorm(torch.Size([512]), eps=1e-05, elementwise_affine=True)
+        #   (dropout): Dropout(p=0.1)
+        # )
+        # d_in = 512
+        # d_hid = 2048
+        # dropout = 0.1
+
+
     def forward(self, x):
         residual = x
         output = x.transpose(1, 2)
@@ -78,4 +168,9 @@ class PositionwiseFeedForward(nn.Module):
         output = output.transpose(1, 2)
         output = self.dropout(output)
         output = self.layer_norm(output + residual)
+
+        # pdb.set_trace()
+        # (Pdb) print(x.size(), output.size())
+        # torch.Size([64, 25, 512]) torch.Size([64, 25, 512])
+
         return output

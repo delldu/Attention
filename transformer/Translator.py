@@ -7,6 +7,8 @@ import torch.nn.functional as F
 from transformer.Models import Transformer
 from transformer.Beam import Beam
 
+import pdb
+
 class Translator(object):
     ''' Load with trained model and handle the beam search '''
 
@@ -36,15 +38,29 @@ class Translator(object):
         model.load_state_dict(checkpoint['model'])
         print('[Info] Trained model state loaded.')
 
-        model.word_prob_prj = nn.LogSoftmax(dim=1)
+        # model.word_prob_prj = nn.LogSoftmax(dim=1)
 
         model = model.to(self.device)
 
         self.model = model
         self.model.eval()
 
+        # pdb.set_trace()
+        # (Pdb) print(model_opt)
+        # Namespace(batch_size=64, cuda=True, d_inner_hid=2048, 
+        #     d_k=64, d_model=512, d_v=64, d_word_vec=512, 
+        #     data='data/multi30k.atok.low.pt', dropout=0.1, 
+        #     embs_share_weight=False, epoch=200, label_smoothing=True, 
+        #     log=None, max_token_seq_len=52, n_head=8, n_layers=6, 
+        #     n_warmup_steps=4000, no_cuda=False, proj_share_weight=True, 
+        #     save_mode='best', save_model='trained', src_vocab_size=2911, 
+        #     tgt_vocab_size=3149)
+
     def translate_batch(self, src_seq, src_pos):
         ''' Translation work in one batch '''
+        # pdb.set_trace()
+        # (Pdb) print(src_seq.size(), src_pos.size())
+        # torch.Size([30, 31]) torch.Size([30, 31])
 
         def get_inst_idx_to_tensor_position_map(inst_idx_list):
             ''' Indicate the position of an instance in a tensor. '''
@@ -61,10 +77,22 @@ class Translator(object):
             beamed_tensor = beamed_tensor.index_select(0, curr_active_inst_idx)
             beamed_tensor = beamed_tensor.view(*new_shape)
 
+            # pdb.set_trace()
+            # (Pdb) print(beamed_tensor, curr_active_inst_idx, n_prev_active_inst, n_bm)
+            # tensor([[   2, 2434, 2051,  ...,    0,    0,    0],
+            #         [   2, 2434, 2051,  ...,    0,    0,    0],
+            #         [   2, 2434, 2051,  ...,    0,    0,    0],
+            #         ...,
+            #         [   2, 1391, 2051,  ...,    0,    0,    0],
+            #         [   2, 1391, 2051,  ...,    0,    0,    0],
+            #         [   2, 1391, 2051,  ...,    0,    0,    0]], device='cuda:0') tensor([ 0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13, 14, 15, 16, 17,
+            #         18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29], device='cuda:0') 30 5
+            # (Pdb) print(beamed_tensor.size())
+            # torch.Size([150, 31])
+
             return beamed_tensor
 
-        def collate_active_info(
-                src_seq, src_enc, inst_idx_to_position_map, active_inst_idx_list):
+        def collate_active_info(src_seq, src_enc, inst_idx_to_position_map, active_inst_idx_list):
             # Sentences which are still active are collected,
             # so the decoder will not run on completed sentences.
             n_prev_active_inst = len(inst_idx_to_position_map)
@@ -75,10 +103,13 @@ class Translator(object):
             active_src_enc = collect_active_part(src_enc, active_inst_idx, n_prev_active_inst, n_bm)
             active_inst_idx_to_position_map = get_inst_idx_to_tensor_position_map(active_inst_idx_list)
 
+            # pdb.set_trace()
+            # (Pdb) print(src_seq.size(), src_enc.size())
+            # torch.Size([150, 31]) torch.Size([150, 31, 512])
+
             return active_src_seq, active_src_enc, active_inst_idx_to_position_map
 
-        def beam_decode_step(
-                inst_dec_beams, len_dec_seq, src_seq, enc_output, inst_idx_to_position_map, n_bm):
+        def beam_decode_step(inst_dec_beams, len_dec_seq, src_seq, enc_output, inst_idx_to_position_map, n_bm):
             ''' Decode and update beam status, and then return active beam idx '''
 
             def prepare_beam_dec_seq(inst_dec_beams, len_dec_seq):
@@ -119,6 +150,15 @@ class Translator(object):
             active_inst_idx_list = collect_active_inst_idx_list(
                 inst_dec_beams, word_prob, inst_idx_to_position_map)
 
+            # pdb.set_trace()
+            # (Pdb) print(len(inst_dec_beams), len_dec_seq, src_seq.size(), 
+            #     enc_output.size(), inst_idx_to_position_map.keys(), n_bm)
+            #     30 1 torch.Size([150, 31])
+            #     torch.Size([150, 31, 512]) 
+            #     dict_keys([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 
+            #         13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29])
+            #     5
+
             return active_inst_idx_list
 
         def collect_hypothesis_and_scores(inst_dec_beams, n_best):
@@ -151,7 +191,6 @@ class Translator(object):
 
             #-- Decode
             for len_dec_seq in range(1, self.model_opt.max_token_seq_len + 1):
-
                 active_inst_idx_list = beam_decode_step(
                     inst_dec_beams, len_dec_seq, src_seq, src_enc, inst_idx_to_position_map, n_bm)
 
@@ -162,5 +201,7 @@ class Translator(object):
                     src_seq, src_enc, inst_idx_to_position_map, active_inst_idx_list)
 
         batch_hyp, batch_scores = collect_hypothesis_and_scores(inst_dec_beams, self.opt.n_best)
+
+        # pdb.set_trace()
 
         return batch_hyp, batch_scores

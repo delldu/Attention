@@ -1,6 +1,7 @@
 import numpy as np
 import torch
 import torch.utils.data
+import pdb
 
 from transformer import Constants
 
@@ -26,6 +27,9 @@ def collate_fn(insts):
     batch_seq = torch.LongTensor(batch_seq)
     batch_pos = torch.LongTensor(batch_pos)
 
+    # print("batch_seq:", batch_seq.size(), batch_seq)
+    # print("batch_pos:", batch_pos.size(), batch_pos)
+
     return batch_seq, batch_pos
 
 class TranslationDataset(torch.utils.data.Dataset):
@@ -45,6 +49,8 @@ class TranslationDataset(torch.utils.data.Dataset):
         self._tgt_word2idx = tgt_word2idx
         self._tgt_idx2word = tgt_idx2word
         self._tgt_insts = tgt_insts
+
+        # pdb.set_trace()
 
     @property
     def n_insts(self):

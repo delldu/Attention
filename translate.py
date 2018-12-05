@@ -1,4 +1,5 @@
 ''' Translate input text with trained model. '''
+import pdb
 
 import torch
 import torch.utils.data
@@ -45,6 +46,12 @@ def main():
     test_src_insts = convert_instance_to_idx_seq(
         test_src_word_insts, preprocess_data['dict']['src'])
 
+    # pdb.set_trace()
+    # (Pdb) print(opt)
+    # Namespace(batch_size=30, beam_size=5, cuda=True, model='trained.chkpt', 
+    #     n_best=1, no_cuda=False, output='pred.txt', src='data/multi30k/test.en.atok', 
+    #     vocab='data/multi30k.atok.low.pt')
+
     test_loader = torch.utils.data.DataLoader(
         TranslationDataset(
             src_word2idx=preprocess_data['dict']['src'],
@@ -64,6 +71,7 @@ def main():
                     pred_line = ' '.join([test_loader.dataset.tgt_idx2word[idx] for idx in idx_seq])
                     f.write(pred_line + '\n')
     print('[Info] Finished.')
+
 
 if __name__ == "__main__":
     main()

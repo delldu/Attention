@@ -4,9 +4,9 @@
     For code in OpenNMT-py, please check the following link:
     https://github.com/OpenNMT/OpenNMT-py/blob/master/onmt/Beam.py
 """
+import pdb
 
 import torch
-import numpy as np
 import transformer.Constants as Constants
 
 class Beam():
@@ -27,6 +27,15 @@ class Beam():
         # The outputs at each time-step.
         self.next_ys = [torch.full((size,), Constants.PAD, dtype=torch.long, device=device)]
         self.next_ys[0][0] = Constants.BOS
+
+        # pdb.set_trace()
+        # (Pdb) a
+        # self = <transformer.Beam.Beam object at 0x7f8b64061ba8>
+        # size = 5
+        # device = device(type='cuda')
+        # (Pdb) print(self.next_ys)
+        # [tensor([2, 0, 0, 0, 0], device='cuda:0')]
+
 
     def get_current_state(self):
         "Get the outputs for the current timestep."

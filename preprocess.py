@@ -2,6 +2,7 @@
 import argparse
 import torch
 import transformer.Constants as Constants
+import pdb
 
 def read_instances_from_file(inst_file, max_sent_len, keep_case):
     ''' Convert file into word seq lists and vocab '''
@@ -27,6 +28,15 @@ def read_instances_from_file(inst_file, max_sent_len, keep_case):
     if trimmed_sent_count > 0:
         print('[Warning] {} instances are trimmed to the max sentence length {}.'
               .format(trimmed_sent_count, max_sent_len))
+
+    # pdb.set_trace()
+    # inst_file = 'data/multi30k/test.en.atok'
+    # max_sent_len = 50
+    # keep_case = False
+    # (Pdb) print(trimmed_sent_count)
+    # 0
+    # (Pdb) print(len(word_insts), word_insts[0])
+    # 1000 ['<s>', 'a', 'man', 'in', 'an', 'orange', 'hat', 'starring', 'at', 'something', '.', '</s>']
 
     return word_insts
 
@@ -59,6 +69,15 @@ def build_vocab_idx(word_insts, min_word_count):
     print('[Info] Trimmed vocabulary size = {},'.format(len(word2idx)),
           'each with minimum occurrence = {}'.format(min_word_count))
     print("[Info] Ignored word count = {}".format(ignored_word_count))
+
+    # pdb.set_trace()
+    # min_word_count = 5
+    # (Pdb) print(type(word_insts), word_insts[0])
+    # <class 'tuple'> ['<s>', 'two', 'young', ',', 'white', 'males', 'are', 'outside', 'near', 'many', 'bushes', '.', '</s>']
+    # print(word2idx)
+    # {'<s>': 2, '</s>': 3, '<blank>': 0, '<unk>': 1, 'nails': 4, 
+    # 'smiles': 5, 'bathtub': 6, 'rack': 7, 'political': 8,
+
     return word2idx
 
 def convert_instance_to_idx_seq(word_insts, word2idx):
@@ -88,6 +107,8 @@ def main():
         opt.train_src, opt.max_word_seq_len, opt.keep_case)
     train_tgt_word_insts = read_instances_from_file(
         opt.train_tgt, opt.max_word_seq_len, opt.keep_case)
+
+    # pdb.set_trace()
 
     if len(train_src_word_insts) != len(train_tgt_word_insts):
         print('[Warning] The training instance count is not equal.')
@@ -159,6 +180,9 @@ def main():
     print('[Info] Dumping the processed data to pickle file', opt.save_data)
     torch.save(data, opt.save_data)
     print('[Info] Finish.')
+
+    # pdb.set_trace()
+
 
 if __name__ == '__main__':
     main()

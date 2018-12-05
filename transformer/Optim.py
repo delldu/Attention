@@ -1,5 +1,6 @@
 '''A wrapper class for optimizer '''
 import numpy as np
+import pdb
 
 class ScheduledOptim():
     '''A simple wrapper class for learning rate scheduling'''
@@ -10,10 +11,25 @@ class ScheduledOptim():
         self.n_current_steps = 0
         self.init_lr = np.power(d_model, -0.5)
 
+        # pdb.set_trace()
+        # (Pdb) a
+        # self = <transformer.Optim.ScheduledOptim object at 0x7fb960e680f0>
+        # optimizer = Adam (
+        # Parameter Group 0
+        #     amsgrad: False
+        #     betas: (0.9, 0.98)
+        #     eps: 1e-09
+        #     lr: 0.001
+        #     weight_decay: 0
+        # )
+        # d_model = 512
+        # n_warmup_steps = 4000
+
     def step_and_update_lr(self):
         "Step with the inner optimizer"
         self._update_learning_rate()
         self._optimizer.step()
+        # pdb.set_trace()
 
     def zero_grad(self):
         "Zero out the gradients by the inner optimizer"
